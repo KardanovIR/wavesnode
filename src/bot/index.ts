@@ -1,7 +1,7 @@
 import * as TelegramBot from 'node-telegram-bot-api'
 import { Database, IUser } from './Database'
 import { Text, Icons } from './Text'
-import { WavesNotifications } from './WavesNotifications'
+import { WavesNotifications } from './balanceMonitor'
 import * as uuid from 'uuid/v4'
 import { validateAddress } from './WavesCrypto'
 import { IDictionary } from '../generic/IDictionary'
@@ -342,7 +342,8 @@ wn.balances.subscribe(async walletBalances => {
         const a = id.alias ? id.alias : address
 
         const more = changed.length > prints.length ? Text[user.language_code].and_more(changed.length - prints.length) : ''
-        bot.sendMessage(id.userId, `*${a}*\n${prints.join('\n')}` + more, { parse_mode: 'Markdown' })
+        await bot.sendMessage(id.userId, `*${a}*`, { parse_mode: 'Markdown' })
+        bot.sendMessage(id.userId, prints.join('\n') + more)
       })
     }
   }
@@ -388,7 +389,7 @@ async function main() {
     }
 
     if (msg.text.startsWith(commands.help) || msg.text.startsWith('/start')) {
-      bot.sendMessage(from.id, Text[user.language_code].help)
+      bot.sendMessage(from.id, Text[user.language_code].help(commandList()))
       return
     }
     if (msg.text.startsWith(commands.language)) {

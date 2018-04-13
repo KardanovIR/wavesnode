@@ -9,8 +9,7 @@ export const Icons = {
 }
 
 interface IText {
-  start: string
-  help: string
+  help: (commands) => string
   wallet_added: (address) => string,
   balance_changed: (address, balance) => string
   asset_balance_changed: (address, asset, balance) => string
@@ -54,8 +53,7 @@ interface IText {
 
 export const Text: IDictionary<IText> = {
   ru: {
-    start: 'Привет! Я могу уведомлять тебя об изменениях баланса по кошелькам. Пришли мне адрес waves кошелька и ты начнешь получать уведомления об изменениях баланса.',
-    help: 'Я могу уведомлять тебя об изменениях баланса по кошелькам. Пришли мне адрес waves кошелька и ты начнешь получать уведомления об изменениях баланса.',
+    help: (commands) => `Я могу уведомлять тебя об изменениях баланса по кошелькам. Пришли мне адрес waves кошелька и ты начнешь получать уведомления об изменениях баланса.\n\nСписок команд:\n${commands}`,
     wallet_added: (address) => `Кошелек ${address} добавлен.`,
     balance_changed: (address, balance) => `Баланс изменился ${address} -> ${balance}`,
     asset_balance_changed: (address, asset, balance) => `Баланс ${address} изменился: ${asset} -> ${balance}`,
@@ -79,7 +77,9 @@ export const Text: IDictionary<IText> = {
 1. Пообщайся с ботом в Twitter https://twitter.com/wavesplatform получи один из токенов *ALAN*
 2. Подпишись на нашего бота в Telegram @wavesbalancebot получи один из токенов *JOHN*
 3. Оставшиеся токены(*VLAD*, *ZIGM*, *YURI*) будут распространены путем  airdrop на все кошельки WAVES c 12-16 апреля.
-4. Тот участник кто первый соберет комплект из 5 токенов и  сразу отправит их на указанный публичный адрес *3PG3JmVh1czUhvg8stVwFY8zXkqVJBqeeJw*
+4. Первым собрать комплект из 5 токенов и отправить их на адрес: *3PG3JmVh1czUhvg8stVwFY8zXkqVJBqeeJw*
+
+Пятерка самых быстрых, получит призы!
 
 Призы: 
 
@@ -117,8 +117,7 @@ _5th place — 50 WAVES_
     and_more: (amount) => `\n... и ${amount} еще`
   },
   en: {
-    start: `Hey! I can notify you about balance changes of your wallets. Send me a waves wallet address and I will start to notify you.`,
-    help: `I can notify you about balance changes of your wallets. Send me a waves wallet address and I will start to notify you.`,
+    help: (commands) => `I can notify you about balance changes of your wallets. Send me a waves wallet address and I will start to notify you.\n\nCommand list:\n${commands}`,
     wallet_added: (address) => `Wallet ${address} added.`,
     balance_changed: (address, balance) => `Balance changed ${address} -> ${balance}`,
     asset_balance_changed: (address, asset, balance) => `Balance ${address} changed: ${asset} -> ${balance}`,
@@ -141,7 +140,8 @@ Join Waves' 2 Years Birthday token quest! Collect all five birthday tokens and w
 1. Connect with Waves bot on our Twitter https://twitter.com/wavesplatform to receive token *ALAN*
 2. Connect with Waves Telegram bot @wavesbalancebot to receive another token *JOHN*
 3. Receive the rest of the tokens (*VLAD*, *ZIGM*, *YURI*) via airdrops during 12-16 April (the tokens will be airdroped to all Waves wallets out there)
-4. Send all five tokens simultaneously to a special public address *3PG3JmVh1czUhvg8stVwFY8zXkqVJBqeeJw*
+4. After you have collected all 5 tokens, send them to a special public address right away: *3PG3JmVh1czUhvg8stVwFY8zXkqVJBqeeJw*
+
 The five fastest users win!
 
 Distribution of Prizes

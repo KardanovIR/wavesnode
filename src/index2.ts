@@ -1,4 +1,4 @@
-import { BufferBe } from "../src/binary/BufferBE"
+import { write } from "../src/binary/BufferBE"
 import { Buffer } from "buffer"
 import * as Long from "long"
 import { suite, test, slow, timeout } from "mocha-typescript"

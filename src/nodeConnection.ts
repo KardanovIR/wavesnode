@@ -128,11 +128,11 @@ export const NodeConnection = (ip: string, port: number, networkPrefix: string):
   function messageHandler(buffer: IReadBuffer) {
     const response = deserializeMessage(buffer)
     if (response) {
-      if (response.code == MessageCode.GetSignaturesResponse) {
+      if (response.code == MessageCode.Signatures) {
         const p = getPromise(MessageCode.GetSignatures, { lastSignature: response.content[0] }, false)
         if (p)
           p.onComplete(response.content)
-      } else if (response.code == MessageCode.GetPeersResponse) {
+      } else if (response.code == MessageCode.Peers) {
         const r = response.content.map(x => x.address.join('.') + ':' + x.port)
         getPromise(MessageCode.GetPeers, {}).onComplete(r)
       } else if (response.code == MessageCode.Block) {

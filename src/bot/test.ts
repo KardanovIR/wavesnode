@@ -1,10 +1,15 @@
 import { KeyValueStoreTyped } from '../generic/KeyValueStore';
 import { validateAddress } from './WavesCrypto';
-const WavesAPI = require('waves-api');
-const Waves = WavesAPI.create(WavesAPI.MAINNET_CONFIG);
-const pk = '7kPFrHDiGw1rCm7LPszuECwWYL3dMf6iMifLRDJQZMzy'
-const address = Waves.tools.getAddressFromPublicKey(pk);
-console.log(address); // '3N1JKsPcQ5x49utR79Maey4tbjssfrn2RYp'
+import { WavesNotifications } from './WavesNotifications';
+import { Database } from './Database';
+import { getHeight, getLastBlocks } from '../wavesApi/blocks';
+import { getAddressesFromObj } from '../wavesApi/utils';
 
-const c = validateAddress('3PNrgtrYxmQYwFydrdE2YojrQyX7XLuDUyH')
-console.log(c)
+async function main() {
+  const blocks = await getLastBlocks(10)
+  const transactions = blocks.map(b => b.transactions).reduce((a, b) => a.concat(b))
+  const addresses = getAddressesFromObj(transactions)
+  console.log(addresses.length)
+}
+
+main()

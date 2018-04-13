@@ -7,9 +7,8 @@ import { Observable, Subscription, Subscriber, Subject, ReplaySubject } from 'rx
 import { IDatabase } from './Database';
 import { KeyValueStoreTyped } from "../generic/KeyValueStore";
 import { getLastBlockSignature } from "../wavesApi/getLastBlockSignature";
-import { getAddressesFromBlock, getLastBlock, getBlock, getNextBlock, getLastSolidBlock, getNextSolidBlock } from "../wavesApi/blocks";
-
-console.log('ver 1.0.0')
+import { getLastBlock, getBlock, getNextBlock, getLastSolidBlock, getNextSolidBlock } from "../wavesApi/blocks";
+import { getAddressesFromObj } from "../wavesApi/utils";
 
 export interface IWalletNotifications {
   balances: Observable<IWalletBalances>
@@ -56,7 +55,7 @@ export const WavesNotifications = (db: IDatabase): IWalletNotifications => {
       }
 
       try {
-        const addresses = await getAddressesFromBlock(block)
+        const addresses = await getAddressesFromObj(block)
         let count = 0
         const p = addresses.map(async a => {
           const subscriptions = await db.getAddressSubscriptions(a)
@@ -84,8 +83,8 @@ export const WavesNotifications = (db: IDatabase): IWalletNotifications => {
       }
     }
 
-    console.log('No solid block yet, next attempt in 30 seconds')
-    setTimeout(discoverAccounts, 1000 * 30)
+    console.log('No solid block yet, next attempt in 20 seconds')
+    setTimeout(discoverAccounts, 1000 * 20)
   }
 
   const balances = new ReplaySubject<IWalletBalances>()

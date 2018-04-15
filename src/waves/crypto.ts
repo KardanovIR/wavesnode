@@ -18,7 +18,7 @@ export interface IKeyPairBytes {
   readonly publicKey: Uint8Array;
 }
 
-function concatUint8Arrays(...args: Uint8Array[]): Uint8Array {
+export function concatUint8Arrays(...args: Uint8Array[]): Uint8Array {
   if (args.length < 2)
     throw new Error('Two or more Uint8Array are expected');
 
@@ -93,19 +93,19 @@ export function buildKeyPairBytes(seed: string): IKeyPairBytes {
   };
 }
 
-export function signBytes(bytes: Uint8Array, privateKey: string): string {
+export function signBytes(bytes: Uint8Array, privateKey: string | Uint8Array): string {
 
-  if (!bytes || !(bytes instanceof Uint8Array)) 
+  if (!bytes || !(bytes instanceof Uint8Array))
     throw new Error('Missing or invalid data');
 
-  if (!privateKey || typeof privateKey !== 'string') 
-    throw new Error('Missing or invalid private key');
-  
-  const privateKeyBytes = base58.decode(privateKey);
+  if (!privateKey)
+    throw new Error('Missing private key');
 
-  if (privateKeyBytes.length !== 32) 
+  const privateKeyBytes = (typeof privateKey !== 'string') ? privateKey : base58.decode(privateKey)
+
+  if (privateKeyBytes.length !== 32)
     throw new Error('Invalid public key');
-  
+
   const signature = axlsign.sign(privateKeyBytes, bytes, secureRandom.randomUint8Array(64));
   return base58.encode(signature);
 }

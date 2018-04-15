@@ -1,5 +1,5 @@
 import { Buffer } from "buffer";
-import { write, IReadBuffer, read } from "./BufferBE";
+import { write, IReadBuffer, read } from "./buffer";
 
 export interface IncomingBuffer {
   tryGet(length: number): IReadBuffer

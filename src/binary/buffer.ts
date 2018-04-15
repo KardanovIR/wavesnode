@@ -26,20 +26,20 @@ export interface IReadBuffer {
 }
 
 export interface IWriteBuffer {
-  writeZeros(length: number): void
-  writeLong(v: Long): void
-  writeInt(v: number): void
-  writeShort(v: number): void
-  writeShortUnsigned(v: number): void
-  writeByte(v: number): void
-  writeBytes(v: Uint8Array | number[], from?: number, to?: number): void
-  writeByteUnsigned(v: number): void
-  writeShorts(v: Uint16Array | number[], from?: number, to?: number): void
-  writeBytes(v: Uint8Array): void
-  writeString(v: string): void
+  writeZeros(length: number): IWriteBuffer
+  writeLong(v: Long): IWriteBuffer
+  writeInt(v: number): IWriteBuffer
+  writeShort(v: number): IWriteBuffer
+  writeShortUnsigned(v: number): IWriteBuffer
+  writeByte(v: number): IWriteBuffer
+  writeBytes(v: Uint8Array | number[], from?: number, to?: number): IWriteBuffer
+  writeByteUnsigned(v: number): IWriteBuffer
+  writeShorts(v: Uint16Array | number[], from?: number, to?: number): IWriteBuffer
+  writeBytes(v: Uint8Array): IWriteBuffer
+  writeString(v: string): IWriteBuffer
 
-  goTo(position: number): void
-  goToEnd(): void
+  goTo(position: number): IWriteBuffer
+  goToEnd(): IWriteBuffer
 
   position(): number
   length(): number
@@ -47,11 +47,12 @@ export interface IWriteBuffer {
   raw(from?: number, to?: number): Buffer
   slice(from?: number, to?: number): IWriteBuffer
 
-  clear(): void
+  clear(): IWriteBuffer
 }
 
 export const read = (buffer: Buffer): IReadBuffer => {
   let position = 0
+
   return {
     position(): number { return position },
     goTo(pos: number): void {
@@ -132,21 +133,24 @@ export const write = (b?: Buffer): IWriteBuffer => {
       end = position
   }
 
-  return {
+  const _buffer: IWriteBuffer = {
     position(): number { return position },
-    goTo(pos: number): void {
+    goTo(pos: number): IWriteBuffer {
       if (pos < 0)
         pos = end + pos
       assert(Math.abs(pos) <= buffer.length, `Position ${pos} is out of bounds, buffer ends at ${buffer.length}`)
       assert(Math.abs(pos) > 0, `Position ${pos} is out of bounds`)
       position = pos
+      return _buffer
     },
-    goToEnd(): void {
+    goToEnd(): IWriteBuffer {
       position = end
+      return _buffer
     },
-    clear(): void {
+    clear(): IWriteBuffer {
       position = 0
       end = 0
+      return _buffer
     },
     raw(from?: number, to?: number) {
       if (!from) from = 0
@@ -159,49 +163,63 @@ export const write = (b?: Buffer): IWriteBuffer => {
       return write(buffer.slice(from, to))
     },
     length(): number { return end },
-    writeInt(v: number) {
+    writeInt(v: number): IWriteBuffer {
       buffer.writeInt32BE(v, position)
       incPos(4)
+      return _buffer
     },
-    writeShort(v: number) {
+    writeShort(v: number): IWriteBuffer {
       buffer.writeInt16BE(v, position)
       incPos(2)
+      return _buffer
     },
-    writeShortUnsigned(v: number) {
+    writeShortUnsigned(v: number): IWriteBuffer {
       buffer.writeUInt16BE(v, position)
       incPos(2)
+      return _buffer
     },
-    writeByte(v: number) {
+    writeByte(v: number): IWriteBuffer {
       buffer.writeInt8(v, position)
       incPos(1)
+      return _buffer
     },
-    writeByteUnsigned(v: number) {
+    writeByteUnsigned(v: number): IWriteBuffer {
       buffer.writeUInt8(v, position)
       incPos(1)
+      return _buffer
     },
-    writeBytes(v: Uint8Array | number[], from?: number, to?: number) {
+    writeBytes(v: Uint8Array | number[], from?: number, to?: number): IWriteBuffer {
       for (let i = (from ? from : 0); i < (to ? to : v.length); i++)
         buffer.writeUInt8(v[i], position + i)
       incPos(v.length)
+      return _buffer
     },
-    writeShorts(v: Uint16Array | number[], from?: number, to?: number) {
+    writeShorts(v: Uint16Array | number[], from?: number, to?: number): IWriteBuffer {
       for (let i = (from ? from : 0); i < (to ? to : v.length); i++)
         buffer.writeUInt16BE(v[i], position + i)
       incPos(v.length)
+      return _buffer
     },
-    writeString(v: string) {
+    writeString(v: string): IWriteBuffer {
       buffer.write(v, position, v.length, encoding)
       incPos(v.length)
+      return _buffer
     },
-    writeZeros(length: number) {
+    writeZeros(length: number): IWriteBuffer {
+      for (let i = 0; i < length; i++)
+        buffer.writeUInt8(0, position + i)
       incPos(length)
+      return _buffer
     },
-    writeLong(v: Long) {
+    writeLong(v: Long): IWriteBuffer {
       const b1 = v.getLowBits()
       const b2 = v.getHighBits()
       buffer.writeInt32BE(b2, position)
       buffer.writeInt32BE(b1, position + 4)
       incPos(8)
+      return _buffer
     },
   }
+
+  return _buffer
 }

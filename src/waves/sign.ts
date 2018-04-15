@@ -1,15 +1,9 @@
-import axios from 'axios'
-import * as JSPath from 'jspath'
-import * as WavesAPI from 'waves-api'
-import * as linq from 'linq'
-import { BufferBe } from './BufferBE'
-import * as Base58 from 'base-58'
 import * as Long from 'long'
 import * as Crypto from './crypto'
-import { Sticker } from 'node-telegram-bot-api';
-import { IPromise } from 'rx-core';
-
-const apiBase = 'http://nodes.hacknet.wavesnodes.com:6869'
+import { IMassTransferTransaction, ITransfer, ISignedMassTransferTransaction } from './transactions'
+import { Utils } from 'linq';
+import base58 from './libs/base58';
+import { write, IWriteBuffer } from '../binary/buffer';
 
 type IDataEntryType = 'integer' | 'boolean' | 'binary'
 
@@ -39,7 +33,7 @@ interface ISignedDataTransacton {
 
 function signDataTransaction(tx: IDataTransaction, privateKey: string): ISignedDataTransacton {
 
-  function writeEntry(buffer: BufferBe, entry: IDataEntry) {
+  function writeEntry(buffer: IWriteBuffer, entry: IDataEntry) {
     const keyBytes = new Buffer(entry.key)
     buffer.writeShortUnsigned(keyBytes.length)
     buffer.writeBytes(keyBytes)
@@ -54,7 +48,7 @@ function signDataTransaction(tx: IDataTransaction, privateKey: string): ISignedD
         buffer.writeByte(entry.value === true ? 1 : 0)
         break
       case 'binary':
-        const bytes = Base58.decode(<string>entry.value)
+        const bytes = base58.decode(<string>entry.value)
         buffer.writeByte(2)
         buffer.writeShortUnsigned(bytes.length)
         buffer.writeBytes(bytes)
@@ -62,10 +56,10 @@ function signDataTransaction(tx: IDataTransaction, privateKey: string): ISignedD
     }
   }
 
-  const buffer = BufferBe()
+  const buffer = write()
   buffer.writeByte(12)
   buffer.writeByte(tx.version)
-  const senderPubKeyBytes = Base58.decode(tx.senderPublicKey)
+  const senderPubKeyBytes = base58.decode(tx.senderPublicKey)
   buffer.writeBytes(senderPubKeyBytes)
   buffer.writeShortUnsigned(tx.data.length)
   tx.data.forEach(entry => writeEntry(buffer, entry))
@@ -84,33 +78,43 @@ function signDataTransaction(tx: IDataTransaction, privateKey: string): ISignedD
   }
 }
 
-//'tambourine'
-export const setData = (seed: string, key: string, value: boolean | number | string) => new Promise<any>((resolve, reject) => {
-  var type: IDataEntryType = 'boolean'
-  if (typeof value == 'number')
-    type = 'integer'
-  else if (typeof value == 'string')
-    type = 'binary'
+export function signMassTranserTransaction(tx: IMassTransferTransaction, seed: string): ISignedMassTransferTransaction {
+  const keyPair = Crypto.buildKeyPairBytes(seed)
+  const senderPublicKey = ''
+  const assetIdBytes = tx.assetId ? Crypto.concatUint8Arrays(Uint8Array.from([1]), base58.decode(tx.assetId)) : Uint8Array.from([0])
 
-  const keyPair = Crypto.createKeyPair(seed)
-  const entry: IDataEntry = { key, type, value }
-  const tx = {
-    data: [entry],
-    fee: 100000,
-    senderPublicKey: keyPair.publicKey,
-    timestamp: Date.now(),
-    version: 1
+  const buffer = write()
+    .writeByte(11)
+    .writeByte(1)
+    .writeBytes(keyPair.publicKey)
+    .writeBytes(assetIdBytes)
+    .writeShortUnsigned(tx.transfers.length)
+  tx.transfers.forEach(t => {
+    buffer.writeBytes(base58.decode(t.recipient))
+      .writeLong(Long.fromNumber(t.amount))
+  })
+  buffer.writeLong(Long.fromNumber(tx.timestamp))
+    .writeLong(Long.fromNumber(tx.fee))
+  if (tx.attachment) {
+    const bytes = base58.decode(tx.attachment)
+    buffer.writeShortUnsigned(bytes.length)
+      .writeBytes(bytes)
+  } else {
+    buffer.writeShortUnsigned(0)
   }
 
-  const signedTransaction = signDataTransaction(tx, keyPair.privateKey)
-  axios.post(`${apiBase}/transactions/broadcast`, signedTransaction).then(response => {
-    resolve(response)
-    console.log(response)
-  }).catch(ex => {
-    reject(ex.response.data.message)
-  })
-})
+  const proof = Crypto.signBytes(buffer.raw(), keyPair.privateKey)
 
+  return {
+    type: 11,
+    version: 1,
+    fee: tx.fee,
+    transfers: tx.transfers,
+    assetId: tx.assetId,
+    attachment: tx.attachment,
+    timestamp: tx.timestamp,
+    senderPublicKey: base58.encode(keyPair.publicKey),
+    proofs: [proof]
+  }
 
-setData('tambourine', 'key', 'Fqyf8K8Jmq7bvNSMncUkTLvEGfxVf65w2GsYZL5SEg4y').then(x => console.log(x))
-
+}

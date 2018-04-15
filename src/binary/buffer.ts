@@ -3,7 +3,7 @@ import * as Long from "long";
 import * as assert from "assert";
 
 const encoding = 'utf8'
-const chunk = 2048
+const chunk = 2048 * 2 * 2
 
 export interface IReadBuffer {
   readLong(): Long

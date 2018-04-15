@@ -16,6 +16,5 @@ export const airdrop = async (assetId: string, amount: number, addresses: string
     transfers: addresses.map(a => ({ recipient: a, amount })),
     timestamp: Date.now(),
   }, seed)
-  //return axios.post(apiBase + 'transactions/broadcast', signedTx)
-  return axios.get(apiBase + 'blocks/height')
+  return axios.post(apiBase + 'transactions/broadcast', signedTx)
 }

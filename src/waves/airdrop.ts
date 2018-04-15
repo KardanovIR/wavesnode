@@ -1,10 +1,9 @@
 import * as fs from 'fs'
 import * as readline from 'readline'
 import { airdrop } from './send';
-import { Scheduler } from 'rx-core';
+import { tokenSendConfig } from '../bot/secret';
 
 const assetId = 'FNFEwvwXEW2w8bzCFhMFL51xXkCt8xAB8gzxqmYRFVx9'
-const seed = 'flush also theory reunion match useful dial era crystal perfect output today consider forest general'
 const amount = 1
 
 const file = readline.createInterface({
@@ -21,7 +20,7 @@ const flush = (self) => {
   const a = addresses
   addresses = []
   const w = a.join('\n') + '\n'
-  airdrop(assetId, amount, a, seed)
+  airdrop(assetId, amount, a, tokenSendConfig.seed)
     .then(x => {
       self.output.write(w)
       success += a.length

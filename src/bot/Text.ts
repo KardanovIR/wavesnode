@@ -9,8 +9,7 @@ export const Icons = {
 }
 
 interface IText {
-  start: string
-  help: string
+  help: (commands) => string
   wallet_added: (address) => string,
   balance_changed: (address, balance) => string
   asset_balance_changed: (address, asset, balance) => string
@@ -44,6 +43,7 @@ interface IText {
   wallet_rename_description: string
   wallets_menu_header: string
   wallets_menu_no_wallets: string
+  wallets_too_many_per_user: string
   wallet_renamed: (address, name) => string
   address_not_valid: string
   and_more: (amount) => string
@@ -53,8 +53,7 @@ interface IText {
 
 export const Text: IDictionary<IText> = {
   ru: {
-    start: 'Привет! Я могу уведомлять тебя об изменениях баланса по кошелькам. Пришли мне адрес waves кошелька и ты начнешь получать уведомления об изменениях баланса.',
-    help: 'Я могу уведомлять тебя об изменениях баланса по кошелькам. Пришли мне адрес waves кошелька и ты начнешь получать уведомления об изменениях баланса.',
+    help: (commands) => `Я могу уведомлять тебя об изменениях баланса по кошелькам. Пришли мне адрес waves кошелька и ты начнешь получать уведомления об изменениях баланса.\n\nСписок команд:\n${commands}`,
     wallet_added: (address) => `Кошелек ${address} добавлен.`,
     balance_changed: (address, balance) => `Баланс изменился ${address} -> ${balance}`,
     asset_balance_changed: (address, asset, balance) => `Баланс ${address} изменился: ${asset} -> ${balance}`,
@@ -66,11 +65,35 @@ export const Text: IDictionary<IText> = {
     button_en: 'En',
     button_wallets: 'Кошельки',
     button_birthday: 'Waves 2 года!',
-    button_birthday_participate: 'Да, конечно!',
+    button_birthday_participate: 'Участвовать!',
     menu_page_title: 'Меню',
-    birthday_page_title: 'Waves празднует свой второй день рождения и мы подготовили что-то особенное...',
+    birthday_page_title: `
+
+Примите участие в квесте в честь дня рождения Waves!
+Кто быстрее соберет комплект из 5 токенов!
+
+Шаги
+
+1. Пообщайся с ботом в Twitter https://twitter.com/wavesplatform получи один из токенов *ALAN*
+2. Подпишись на нашего бота в Telegram @wavesbalancebot получи один из токенов *JOHN*
+3. Оставшиеся токены(*VLAD*, *ZIGM*, *YURI*) будут распространены путем  airdrop на все кошельки WAVES c 12-16 апреля.
+4. Первым собрать комплект из 5 токенов и отправить их на адрес: *3PG3JmVh1czUhvg8stVwFY8zXkqVJBqeeJw*
+
+Пятерка самых быстрых, получит призы!
+
+Призы: 
+
+_1st place — 300 WAVES_
+_2nd place — 250 WAVES_
+_3rd place — 150 WAVES_
+_4th place — 100 WAVES_
+_5th place — 50 WAVES_
+
+Напоминаем вам, для покупки недостающих токенов используйте биржу DEX —> https://wavesplatform.com/product
+    
+`,
     birthday_page_title_already_participating: 'Ты уже в игре! Поздравляем!',
-    birthday_message_congrats: 'Поздравляем! Ты успешно зарегистрирован!',
+    birthday_message_congrats: 'Поздравляем! Ты успешно зарегистрирован! Лови JOHN токен, проверь кошелек?',
     ask_wallet_promt: 'Дай адрес своего кошелька?',
     ask_wallet_promt_invalid_input: 'Адрес не похож на waves, попробуй еще:',
     ask_email_promt: 'Чтобы принять участие нам какже нужен твой email?',
@@ -89,12 +112,12 @@ export const Text: IDictionary<IText> = {
     wallets_menu_header: 'Вот твои кошельки:',
     wallets_menu_no_wallets: 'Тут пока пусто. Отправь мне адрес waves кошелька, чтобы начать получать уведомления.',
     wallet_renamed: (address, name) => `${address}\nпереименован: ${name}`,
+    wallets_too_many_per_user: 'У тебя слишком много кошельков, удали что-нибудь и сможешь добавить новый.',
     address_not_valid: 'Похоже адрес неправильный, может это не waves? Попробуй проверить и повторить ;)',
     and_more: (amount) => `\n... и ${amount} еще`
   },
   en: {
-    start: `Hey! I can notify you about balance changes of your wallets. Send me a waves wallet address and I will start to notify you.`,
-    help: `I can notify you about balance changes of your wallets. Send me a waves wallet address and I will start to notify you.`,
+    help: (commands) => `I can notify you about balance changes of your wallets. Send me a waves wallet address and I will start to notify you.\n\nCommand list:\n${commands}`,
     wallet_added: (address) => `Wallet ${address} added.`,
     balance_changed: (address, balance) => `Balance changed ${address} -> ${balance}`,
     asset_balance_changed: (address, asset, balance) => `Balance ${address} changed: ${asset} -> ${balance}`,
@@ -105,12 +128,35 @@ export const Text: IDictionary<IText> = {
     button_ru: 'Ru',
     button_en: 'En',
     button_wallets: 'Wallets',
-    button_birthday: 'Join Waves 2 Years Birthday quest!',
+    button_birthday: 'Waves 2 Years QUEST!',
     button_birthday_participate: 'Join',
     menu_page_title: 'Menu',
-    birthday_page_title: `Waves will be celebrating it\'s second birthday soon, and we have prepared something special for you!\nCollect all six birthday tokens and win!\nSteps of the Quest\nConnect with Waves bot on Facebook [link] to receive a token\nConnect with Waves bot on Twitter [link] to receive the next token\nConnect with Waves Telegram bot [link] to receive another token\nReceive the rest of the tokens via airdrops (the tokens will de deployed to all Waves wallets out there\nSend all six tokens simultaneously to a special public address 3PG3JmVh1czUhvg8stVwFY8zXkqVJBqeeJw\nThe four fastest users win!\nDistribution of Prizes:\n1st place — 300 WAVES\n2nd place — 250 WAVES\n3rd place — 150 WAVES\n4th place — 100 WAVES)\n5th place — 50 WAVES\nJust a reminder: use Waves DEX if you're short of tokens!`,
+    birthday_page_title: `
+
+Join Waves' 2 Years Birthday token quest! Collect all five birthday tokens and win!
+
+*Steps of the Quest*:
+
+1. Connect with Waves bot on our Twitter https://twitter.com/wavesplatform to receive token *ALAN*
+2. Connect with Waves Telegram bot @wavesbalancebot to receive another token *JOHN*
+3. Receive the rest of the tokens (*VLAD*, *ZIGM*, *YURI*) via airdrops during 12-16 April (the tokens will be airdroped to all Waves wallets out there)
+4. After you have collected all 5 tokens, send them to a special public address right away: *3PG3JmVh1czUhvg8stVwFY8zXkqVJBqeeJw*
+
+The five fastest users win!
+
+Distribution of Prizes
+
+_1st place — 300 WAVES_
+_2nd place — 250 WAVES_
+_3rd place — 150 WAVES_
+_4th place — 100 WAVES_
+_5th place — 50 WAVES_
+
+Just a reminder: use Waves DEX if you're short of tokens —> https://wavesplatform.com/product
+
+`,
     birthday_page_title_already_participating: 'You\'re already in the game, congrats!',
-    birthday_message_congrats: 'Registration successful!',
+    birthday_message_congrats: 'Registration successful! Check your wallet I\'m sending JOHN token to you right now!',
     ask_wallet_promt: 'What is your wallet?',
     ask_wallet_promt_invalid_input: 'This is not valid waves address, try again...',
     ask_email_promt: 'In order to participate give us your email please?',
@@ -129,6 +175,7 @@ export const Text: IDictionary<IText> = {
     wallets_menu_header: 'Manage your wallets:',
     wallets_menu_no_wallets: 'No wallets yet. You can send me a waves wallet address to enable notifications.',
     wallet_renamed: (address, name) => `${address}\nrenamed: ${name}`,
+    wallets_too_many_per_user: 'You have too many wallets, remove old one and try again.',
     address_not_valid: 'It seems that address is not a valid one or maybe it`s not a waves wallet? Double-check everything and try again ;)',
     and_more: (amount) => `\n... and ${amount} more`
   }

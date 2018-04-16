@@ -8,8 +8,9 @@ const encodeDecode = {
 export const KeyValueStoreTyped = <T>(filename: string) => {
   const kvstore = KeyValueStore(filename)
   kvstore.get
-  return { 
+  return {
     get: (key: string, remove: boolean = false) => kvstore.get<T>(key, remove),
+    all: () => kvstore.all<T>(),
     insert: (key: string, value: T) => kvstore.insert<T>(key, value),
     update: (key: string, value: T, insertIfNotExists: boolean = true) => kvstore.update<T>(key, value, insertIfNotExists)
   }
@@ -48,7 +49,7 @@ export const KeyValueStore = (fileName: string) => {
     })
   })
 
-  const get = <T>(key: string, remove: boolean = false): Promise<{ key: string, value: T } | undefined> => new Promise((resolve, reject) => {
+  const get = <T>(key?: string, remove: boolean = false): Promise<{ key: string, value: T } | undefined> => new Promise((resolve, reject) => {
     db.serialize(() => {
       const params = key ? { $key: key } : undefined
       db.get(`SELECT * FROM kvstore${key ? ' WHERE key == $key ' : ' '}LIMIT 1`, params, function (err, row) {
@@ -82,5 +83,18 @@ export const KeyValueStore = (fileName: string) => {
     })
   })
 
-  return { get, insert, update }
+  const all = <T>(): Promise<{ key: string, value: T }[] | undefined> => new Promise((resolve, reject) => {
+    db.serialize(() => {
+      db.all(`SELECT * FROM kvstore`, function (err, rows) {
+        if (err) {
+          console.log(err)
+          resolve(undefined)
+          return
+        }
+        resolve(rows.map(row => ({ key: row.key, value: decode<T>(row.value) })))
+      })
+    })
+  })
+
+  return { get, insert, update, all }
 }

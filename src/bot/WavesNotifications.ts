@@ -7,7 +7,8 @@ import { Observable, Subscription, Subscriber, Subject, ReplaySubject } from 'rx
 import { IDatabase } from './Database';
 import { KeyValueStoreTyped } from "../generic/KeyValueStore";
 import { getLastBlockSignature } from "../wavesApi/getLastBlockSignature";
-import { getAddressesFromBlock, getLastBlock, getBlock, getNextBlock, getLastSolidBlock, getNextSolidBlock } from "../wavesApi/blocks";
+import { getLastBlock, getBlock, getNextBlock, getLastSolidBlock, getNextSolidBlock } from "../wavesApi/blocks";
+import { getAddressesFromObj } from "../wavesApi/utils";
 
 export interface IWalletNotifications {
   balances: Observable<IWalletBalances>
@@ -19,7 +20,7 @@ export const WavesNotifications = (db: IDatabase): IWalletNotifications => {
   let processedBlocks = []
   function processedBlock(signature: string) {
     processedBlocks.push(signature)
-    if(processedBlocks.length > 10) {
+    if (processedBlocks.length > 10) {
       processedBlocks.shift()
     }
   }
@@ -54,7 +55,7 @@ export const WavesNotifications = (db: IDatabase): IWalletNotifications => {
       }
 
       try {
-        const addresses = await getAddressesFromBlock(block)
+        const addresses = await getAddressesFromObj(block)
         let count = 0
         const p = addresses.map(async a => {
           const subscriptions = await db.getAddressSubscriptions(a)
@@ -75,14 +76,15 @@ export const WavesNotifications = (db: IDatabase): IWalletNotifications => {
 
         await storage.update(lastSignatureKey, block.signature)
         console.log(`Last signature is now: ${block.signature}`)
+        failedAttempts = 0
       } catch (ex) {
         console.log(ex)
         break
       }
     }
 
-    console.log('No solid block yet, next attempt in 30 seconds')
-    setTimeout(discoverAccounts, 1000 * 30)
+    console.log('No solid block yet, next attempt in 20 seconds')
+    setTimeout(discoverAccounts, 1000 * 20)
   }
 
   const balances = new ReplaySubject<IWalletBalances>()

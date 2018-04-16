@@ -1,7 +1,7 @@
 import * as TelegramBot from 'node-telegram-bot-api'
 import { Database, IUser } from './Database'
 import { Text, Icons } from './Text'
-import { WavesNotifications } from './WavesNotifications'
+import { WavesNotifications } from './balanceMonitor'
 import * as uuid from 'uuid/v4'
 import { validateAddress } from './WavesCrypto'
 import { IDictionary } from '../generic/IDictionary'
@@ -9,8 +9,12 @@ import { IAsset } from '../wavesApi/IAsset'
 import { formatAsset, formatAssetBalance } from '../wavesApi/formatAsset'
 import { getBalance, wavesAsset } from '../wavesApi/getBalance'
 import { menu, IContext, PageCreationCommands, update, navigate, close, promt } from './pages/framework'
-import { KeyValueStore } from '../generic/KeyValueStore'
+import { KeyValueStore, KeyValueStoreTyped } from '../generic/KeyValueStore'
 import { sendMail } from './mail/sendMail'
+import { telegrammToken, tokenSendConfig } from './secret';
+import * as Waves from 'waves-api'
+
+const w = Waves.create(Waves.MAINNET_CONFIG);
 
 function validateEmail(email) {
   var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
@@ -26,22 +30,62 @@ async function text(userId: string | number) {
 
 async function sendToken(userId: string | number) {
 
+  var partiicpant = await birthdayParticipants.get(userId.toString(), false)
+  if (!partiicpant || partiicpant.value.botTokenSent)
+    return
+
+  const transferData = {
+    recipient: partiicpant.value.wallet,
+    assetId: tokenSendConfig.assetId,
+    amount: tokenSendConfig.amount,
+    feeAssetId: 'WAVES',
+    fee: 100000,
+    attachment: '',
+    timestamp: Date.now()
+  }
+
+  const anotherSeed = w.Seed.fromExistingPhrase(tokenSendConfig.seed);
+
+  updateBirthdayParticipant(userId.toString(), i => i.botTokenSent = true)
+
+  w.API.Node.v1.assets.transfer(transferData, anotherSeed.keyPair)
+    .catch(_ => updateBirthdayParticipant(userId.toString(), i => i.botTokenSent = false))
+}
+
+interface IBirthdayParticipantInfo {
+  emaiConfirmed: boolean,
+  wallet: string,
+  botTokenSent: boolean
 }
 
 const randomCode = () => Array(6).fill(0).map(_ => Math.floor(Math.random() * 10)).join('')
 
 const db = Database()
-const bot = new TelegramBot('382693323:AAFFER1PYmxOp9njb8tsZp6HqvJE6P2T0o0', { polling: true })
+const bot = new TelegramBot(telegrammToken, { polling: true })
 const kvStore = KeyValueStore('kvstore')
 const confirmationCodes = KeyValueStore('confirmationCodes')
-const birthdayParticipants = KeyValueStore('birthdayParticipants')
+const birthdayParticipants = KeyValueStoreTyped<IBirthdayParticipantInfo>('birthdayParticipants')
+
+const updateBirthdayParticipant = async (userId: string, update: (p: IBirthdayParticipantInfo) => void) => {
+  let old: { key: string, value: IBirthdayParticipantInfo } = await birthdayParticipants.get(userId, false)
+  if (!old)
+    old = { key: userId, value: { wallet: null, botTokenSent: false, emaiConfirmed: false } }
+
+  update(old.value)
+  await birthdayParticipants.update(userId, old.value)
+}
+
 const promts = {
   askWallet: async (context: IContext<any>, response: string) => {
     const txt = await text(context.user.id)
     if (validateAddress(response)) {
+      const userId = context.user.id.toString()
       await db.addWallet(response, context.user.id.toString())
-      const isNew = await db.addSubscription(response, context.user.id.toString())
-      return promt(promts.askEmail, txt.ask_email_promt)
+      const isNew = await db.addSubscription(response, userId)
+      await updateBirthdayParticipant(userId, i => i.wallet = response.trim())
+      await sendToken(userId)
+      bot.sendMessage(userId, txt.birthday_message_congrats)
+      return close
     }
     return promt(promts.askWallet, txt.ask_wallet_promt_invalid_input)
   },
@@ -64,7 +108,7 @@ const promts = {
       const user = await db.getUser(context.user.id.toString())
       user.email = context.data
       await db.updateUser(user)
-      birthdayParticipants.update(user.id.toString(), true)
+      await updateBirthdayParticipant(user.id, i => i.emaiConfirmed = true)
       await sendToken(user.id)
       bot.sendMessage(user.id, txt.birthday_message_congrats)
       return close
@@ -104,6 +148,7 @@ const actions = {
     return promt(promts.askWallet, txt.ask_wallet_promt)
   },
 }
+
 const { showPage } = menu(bot, pages, promts, actions, kvStore)
 const wn = WavesNotifications(db)
 const adminToken = 'fbcffdc09422468b813df90296701b2e'
@@ -297,7 +342,8 @@ wn.balances.subscribe(async walletBalances => {
         const a = id.alias ? id.alias : address
 
         const more = changed.length > prints.length ? Text[user.language_code].and_more(changed.length - prints.length) : ''
-        bot.sendMessage(id.userId, `*${a}*\n${prints.join('\n')}` + more, { parse_mode: 'Markdown' })
+        await bot.sendMessage(id.userId, `*${a}*`, { parse_mode: 'Markdown' })
+        bot.sendMessage(id.userId, prints.join('\n') + more)
       })
     }
   }
@@ -310,7 +356,6 @@ async function main() {
     const from = msg.from
     await db.addUser(from.id, from.is_bot == true ? 1 : 0, from.first_name, from.last_name, from.username, from.language_code)
     const user = await db.getUser(from.id.toString())
-
 
     if (msg.reply_to_message && msg.reply_to_message.from.id == botUser.id && msg.reply_to_message.text == 'What do you want to post?') {
       bot.sendMessage(msg.chat.id, msg.text, {
@@ -344,7 +389,7 @@ async function main() {
     }
 
     if (msg.text.startsWith(commands.help) || msg.text.startsWith('/start')) {
-      bot.sendMessage(from.id, Text[user.language_code].help)
+      bot.sendMessage(from.id, Text[user.language_code].help(commandList()))
       return
     }
     if (msg.text.startsWith(commands.language)) {
@@ -385,6 +430,11 @@ async function main() {
         return
       }
       const address = msg.text
+      const subs = await db.getUserSubscriptions(user.id)
+      if (subs && subs.length > 4) {
+        bot.sendMessage(user.id, Text[user.language_code].wallets_too_many_per_user)
+        return
+      }
       await db.addWallet(address, user.id)
       const isNew = await db.addSubscription(address, user.id)
       if (isNew) {

@@ -23,7 +23,7 @@ export interface BufferBe {
   readByte(): number
   writeBytes(v: Uint8Array | number[], from?: number, to?: number): void
   writeByteUnsigned(v: number): void
-  writeShorts(v: Uint16Array | number[], from?: number, to?: number) : void
+  writeShorts(v: Uint16Array | number[], from?: number, to?: number): void
   readShorts(length: number): Uint16Array
   readByteUnsigned(): number
   writeBytes(v: Uint8Array): void
@@ -35,7 +35,7 @@ export interface BufferBe {
 export const BufferBe = (initialBuffer?: Buffer): BufferBe => {
 
   const encoding = 'utf8'
-  const chunk = 2048
+  const chunk = 2048 * 2 * 2 //TODO
   const buffer = initialBuffer ? initialBuffer : Buffer.allocUnsafe(chunk)
   let position = 0
   let end = initialBuffer ? initialBuffer.length : 0
@@ -134,9 +134,14 @@ export const BufferBe = (initialBuffer?: Buffer): BufferBe => {
       return r
     },
     writeBytes(v: Uint8Array | number[], from?: number, to?: number) {
-      for (let i = (from ? from : 0); i < (to ? to : v.length); i++)
-        buffer.writeUInt8(v[i], position + i)
-      incPos(v.length)
+      try {
+        for (let i = (from ? from : 0); i < (to ? to : v.length); i++)
+          buffer.writeUInt8(v[i], position + i)
+        incPos(v.length)
+      }
+      catch (ex) {
+        const a = ex
+      }
     },
     readBytes(length: number): Uint8Array {
       const r = Uint8Array.from(buffer.slice(position, position + length))
